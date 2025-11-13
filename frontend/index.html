@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyTube</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Popup modal */
+    .popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 999;
+    }
+    .popup-content {
+      background: #111;
+      padding: 20px 30px;
+      border-radius: 12px;
+      color: #00ff99;
+      font-family: monospace;
+      text-align: center;
+      box-shadow: 0 0 20px #00ff99;
+      animation: pulse 1.5s infinite alternate;
+    }
+    @keyframes pulse {
+      from { box-shadow: 0 0 10px #00ff99; }
+      to { box-shadow: 0 0 25px #00ff99; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ======= SIDEBAR ======= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2><span class="logo-red">My</span>Tube</h2>
+      <button class="close-btn" id="closeSidebar">✖</button>
+    </div>
+    <nav>
+      <a href="index.html" class="active">🏠 Home</a>
+      <a href="downloads.html">⬇️ Downloads</a>
+      <a href="about.html">ℹ️ About</a>
+    </nav>
+  </aside>
+
+  <!-- ======= NAVBAR ======= -->
+  <header class="navbar">
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <div class="logo"><span class="logo-red">My</span>Tube</div>
+    <div class="search-bar">
+      <input type="text" placeholder="Search for videos..." id="searchInput">
+      <button id="searchBtn">🔍</button>
+    </div>
+  </header>
+
+  <!-- ======= MAIN ======= -->
+  <main>
+    <div id="results" class="results">
+      <p class="loading">Search for videos 🔍</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 MyTube — Designed by Danscot</p>
+  </footer>
+
+  <!-- Popup -->
+  <div class="popup" id="popup">
+    <div class="popup-content" id="popupContent">
+      ⏳ Processing your download...
+    </div>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const menuBtn = document.getElementById('menuBtn');
+    const closeSidebar = document.getElementById('closeSidebar');
+    menuBtn.addEventListener('click', () => sidebar.classList.add('open'));
+    closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
+    const results = document.getElementById('results');
+    const popup = document.getElementById('popup');
+    const popupContent = document.getElementById('popupContent');
+
+    const API = "http://127.0.0.1:8000";
+
+    searchBtn.addEventListener('click', async () => {
+      const query = searchInput.value.trim();
+      if (!query) return alert("Please enter a search term");
+
+      results.innerHTML = "<p class='loading'>Searching...</p>";
+
+      const res = await fetch(`${API}/youtube/search?query=${encodeURIComponent(query)}`);
+      const json = await res.json();
+      const data = json.results || [];
+      results.innerHTML = "";
+
+      if (!data.length) {
+        results.innerHTML = "<p class='empty'>No videos found 😔</p>";
+        return;
+      }
+
+      data.forEach(video => {
+        const card = document.createElement("div");
+        card.classList.add("video-card");
+        card.innerHTML = `
+          <img src="${video.thumbnail}" alt="thumb">
+          <div class="video-info">
+            <h4>${video.title}</h4>
+            <div class="actions">
+              <button class="audio-btn" onclick="downloadMedia('${video.url}', 'mp3', '${video.title}')">Audio</button>
+              <button class="video-btn" onclick="downloadMedia('${video.url}', 'mp4', '${video.title}')">Video</button>
+            </div>
+          </div>`;
+        results.appendChild(card);
+      });
+    });
+
+    async function downloadMedia(url, type, title) {
+      popup.style.display = "flex";
+      popupContent.textContent = "⏳ Processing your download...";
+
+      try {
+        const endpoint = `${API}/youtube/${type}?url=${url}`;
+        const response = await fetch(endpoint);
+
+        if (!response.ok) throw new Error("Failed download");
+        const blob = await response.blob();
+        const filename = response.headers.get("content-disposition")
+          ?.split("filename=")[1]
+          ?.replace(/"/g, "") || `${title}.${type}`;
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+
+        popupContent.textContent = "✅ Download complete!";
+        setTimeout(() => (popup.style.display = "none"), 1500);
+      } catch (err) {
+        popupContent.textContent = "⚠️ Error during download!";
+        setTimeout(() => (popup.style.display = "none"), 2000);
+      }
+    }
+  </script>
+</body>
+</html>

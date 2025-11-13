@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Download — MyTube</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Popup */
+    #popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: none;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    #popupContent {
+      background: #111;
+      color: #fff;
+      padding: 30px 25px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 420px;
+      box-shadow: 0 0 40px rgba(255,0,0,0.25);
+    }
+
+    #popupContent .title {
+      color: #ff4d4d;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    #popupContent .msg {
+      color: #f1c6c6;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2><span class="logo-red">My</span>Tube</h2>
+      <button class="close-btn" id="closeSidebar">✖</button>
+    </div>
+    <nav>
+      <a href="index.html">🏠 Home</a>
+      <a href="downloads.html" class="active">⬇️ Downloads</a>
+      <a href="about.html">ℹ️ About</a>
+    </nav>
+  </aside>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <div class="logo"><span class="logo-red">My</span>Tube</div>
+  </header>
+
+  <!-- Main -->
+  <main class="download-section">
+    <div class="download-box">
+      <h2>Instant Download</h2>
+      <p class="desc">Paste a YouTube link below to download it instantly as Audio or Video 🎧📹</p>
+
+      <input type="text" id="videoUrl" placeholder="https://youtube.com/watch?v=..." />
+
+      <div class="download-buttons">
+        <button id="audioBtn" class="audio-btn">Download Audio</button>
+        <button id="videoBtn" class="video-btn">Download Video</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Popup -->
+  <div id="popup" aria-hidden="true">
+    <div id="popupContent" role="dialog" aria-live="polite">
+      <div class="title">⏳ Processing your download</div>
+      <div class="loader" style="width:36px;height:36px;border:4px solid #222;border-top:4px solid #ff4d4d;border-radius:50%;margin:12px auto;animation:spin 1s linear infinite"></div>
+      <div class="msg">This may take a few seconds...</div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 MyTube — Designed by Danscot</p>
+  </footer>
+
+  <script>
+    // UI setup
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    menuBtn?.addEventListener('click', () => sidebar.classList.add('open'));
+    closeSidebar?.addEventListener('click', () => sidebar.classList.remove('open'));
+
+    const audioBtn = document.getElementById('audioBtn');
+    const videoBtn = document.getElementById('videoBtn');
+    const videoUrl = document.getElementById('videoUrl');
+    const popup = document.getElementById('popup');
+    const popupContent = document.getElementById('popupContent');
+
+    const API = window.location.hostname.includes("danscot.tech")
+      ? "https://api.danscot.tech"
+      : "http://127.0.0.1:8000";
+
+    function showPopup(text = "⏳ Processing your download...") {
+      popupContent.querySelector('.title').textContent = text;
+      popup.style.display = "flex";
+      popup.setAttribute('aria-hidden', 'false');
+    }
+    function hidePopup() {
+      popup.style.display = "none";
+      popup.setAttribute('aria-hidden', 'true');
+    }
+
+    // helper: extract filename from content-disposition header
+    function parseFilenameFromDisposition(header) {
+      if (!header) return null;
+      const fnMatch = header.match(/filename\*?=(?:UTF-8'')?["']?([^;"']+)["']?/i);
+      if (fnMatch && fnMatch[1]) return decodeURIComponent(fnMatch[1]);
+      return null;
+    }
+
+    async function downloadMedia(url, type) {
+      const encodedUrl = encodeURIComponent(url.trim());
+      if (!encodedUrl) {
+        alert("Please enter a valid YouTube URL");
+        return;
+      }
+
+      showPopup("⏳ Processing your download...");
+
+      try {
+        const endpoint = `${API}/youtube/${type}?url=${encodedUrl}`;
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+          let errText = `HTTP ${response.status}`;
+          try {
+            const j = await response.json();
+            if (j.error) errText = j.error;
+          } catch (_) {}
+          throw new Error(errText);
+        }
+
+        const blob = await response.blob();
+        const cd = response.headers.get("content-disposition");
+        let filename = parseFilenameFromDisposition(cd);
+
+        if (!filename) {
+          const metaTitle = response.headers.get("X-Video-Title");
+          if (metaTitle) {
+            filename = `${metaTitle.replace(/[^\w\-_. ]+/g, '')}.${type}`;
+          } else {
+            try {
+              const ytUrl = new URL(url);
+              const id = ytUrl.searchParams.get("v") || ytUrl.pathname.split("/").pop();
+              filename = `${id || "video"}.${type}`;
+            } catch {
+              filename = `download.${type}`;
+            }
+          }
+        }
+
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+          a.remove();
+          URL.revokeObjectURL(objectUrl);
+        }, 1500);
+
+        popupContent.querySelector('.title').textContent = "✅ Download complete!";
+        setTimeout(() => hidePopup(), 1400);
+      } catch (err) {
+        console.error("download error:", err);
+        popupContent.querySelector('.title').textContent = "⚠️ Error during download!";
+        popupContent.querySelector('.msg').textContent = err.message || "Unknown error";
+        setTimeout(() => hidePopup(), 2000);
+      }
+    }
+
+    audioBtn.addEventListener('click', () => {
+      const url = videoUrl.value.trim();
+      if (!url) return alert("Please enter a YouTube URL");
+      downloadMedia(url, "mp3");
+    });
+
+    videoBtn.addEventListener('click', () => {
+      const url = videoUrl.value.trim();
+      if (!url) return alert("Please enter a YouTube URL");
+      downloadMedia(url, "mp4");
+    });
+
+    const style = document.createElement('style');
+    style.textContent = `@keyframes spin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}`;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

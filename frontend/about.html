@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — MyTube</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ======= SIDEBAR ======= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2><span class="logo-red">My</span>Tube</h2>
+      <button class="close-btn" id="closeSidebar">✖</button>
+    </div>
+    <nav>
+      <a href="index.html">🏠 Home</a>
+      <a href="downloads.html">⬇️ Downloads</a>
+      <a href="about.html" class="active">ℹ️ About</a>
+      
+    </nav>
+  </aside>
+
+  <!-- ======= NAVBAR ======= -->
+  <header class="navbar">
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <div class="logo">
+      <span class="logo-red">My</span>Tube
+    </div>
+  </header>
+
+  <!-- ======= MAIN CONTENT ======= -->
+  <main class="about-section">
+    <div class="about-box">
+      <h2>About MyTube</h2>
+      <p class="desc">Mytube is a lightweight YouTube parody web app. Instantly search and download videos or audio using our API.</p>
+      
+      <div class="contact-info">
+        <div class="info-card">
+          <h4>👤 Name</h4>
+          <p>Danscot</p>
+        </div>
+        <div class="info-card">
+          <h4>📞 Phone</h4>
+          <p>+237 670701984</p>
+        </div>
+        <div class="info-card">
+          <h4>🔗  API</h4>
+          <p>github.com/Danscot/mytube-api</p>
+        </div>
+        <div class="info-card">
+          <h4>Portfolio</h4>
+          <a href="https://danscot.netlify.app" target="_blank">https://danscot.netlify.app</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 MyTube — Designed by Danscot</p>
+  </footer>
+
+  <script>
+  // Sidebar toggle
+  const sidebar = document.getElementById('sidebar');
+  const menuBtn = document.getElementById('menuBtn');
+  const closeSidebar = document.getElementById('closeSidebar');
+
+  menuBtn.addEventListener('click', () => sidebar.classList.add('open'));
+  closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+  </script>
+</body>
+</html>
