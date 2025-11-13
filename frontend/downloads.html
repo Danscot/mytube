@@ -100,9 +100,7 @@
     const popup = document.getElementById('popup');
     const popupContent = document.getElementById('popupContent');
 
-    const API = window.location.hostname.includes("danscot.tech")
-      ? "https://api.danscot.tech"
-      : "http://127.0.0.1:8000";
+    const API = "https://api.danscot.tech";
 
     function showPopup(text = "⏳ Processing your download...") {
       popupContent.querySelector('.title').textContent = text;
